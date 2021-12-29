@@ -7,16 +7,18 @@ from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from minio import Minio
 from airflow.models import Variable
+from airflow.models import Connection
 
 
 # Операция извлечения данных
 def extract_data():
-    # Создаём клиента для подключение к minio
-
+    # Цепляемся за подключение созданное нами внутри среды AirFlow
+    conn = Connection().get_connection_from_secrets(Variable.get("minio_connection"))
+    # Создаём клиента для подключения к Minio
     client = Minio(
-        Variable.get("minio_endpoint"),
-        access_key=Variable.get("minio_access_key"),
-        secret_key=Variable.get("minio_secret_key"),
+        f"{conn.host}:{conn.port}",
+        access_key=conn.login,
+        secret_key=conn.password,
         secure=False
     )
     # Выгружаем оттуда объект
@@ -47,7 +49,7 @@ def transform_data():
     df.drop(["blank"], axis=1, inplace=True)
     df.drop(["blank2"], axis=1, inplace=True)
 
-    # Очищаем датафрейм от пустых строк, за основую берётся поле в котором всегда есть значение
+    # Очищаем DataFrame от пустых строк, за основу берётся поле, в котором всегда есть значение
     df = df.dropna(subset=['sign_date'])
 
     # Трансформация 1: "1 от 17.09.2018" -> 17.09.2018
@@ -82,11 +84,13 @@ def transform_data():
 
 # Операция загрузки обработанных данных
 def load_data():
+    # Цепляемся за подключение созданное нами внутри среды AirFlow
+    conn = Connection().get_connection_from_secrets(Variable.get("minio_connection"))
     # Cоздаём подключение к minio
     client = Minio(
-        Variable.get("minio_endpoint"),
-        access_key=Variable.get("minio_access_key"),
-        secret_key=Variable.get("minio_secret_key"),
+        f"{conn.host}:{conn.port}",
+        access_key=conn.login,
+        secret_key=conn.password,
         secure=False
     )
     # Отправляем файл в minio
@@ -112,24 +116,24 @@ with DAG(
         catchup=False,
         default_args=args
 ) as etl_dag:
-    # Закрепляем операцию извлечения в etl_dug
+    # Закрепляем операцию извлечения в etl_dag
     extract = PythonOperator(
         python_callable=extract_data,
         dag=etl_dag,
         task_id='extract'
     )
-    # Закрепляем операцию трансформации в etl_dug
+    # Закрепляем операцию трансформации в etl_dag
     transform = PythonOperator(
         python_callable=transform_data,
         dag=etl_dag,
         task_id='transform'
     )
-    # Закрепляем операцию загрузки в etl_dug
+    # Закрепляем операцию загрузки в etl_dag
     load = PythonOperator(
         python_callable=load_data,
         dag=etl_dag,
         task_id='load'
     )
 
-# Строим пайплайн для создания полноценного etl процесса в нашем даге
+# Строим пайплайн для создания полноценного etl процесса в нашем DAG
 extract >> transform >> load
