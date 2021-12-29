@@ -20,7 +20,7 @@ def extract_data():
         secure=False
     )
     # Выгружаем оттуда объект
-    client.fget_object("bucket1", "input.csv", "input.csv")
+    client.fget_object(Variable.get("minio_bucket_name"), "input.csv", "input.csv")
 
 
 # Операция трансформации данных
@@ -91,7 +91,7 @@ def load_data():
     )
     # Отправляем файл в minio
     client.fput_object(
-        bucket_name="bucket1",
+        bucket_name=Variable.get("minio_bucket_name"),
         object_name="output.csv",
         file_path="./output.csv",
         content_type='application/csv',
