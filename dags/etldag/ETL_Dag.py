@@ -13,12 +13,12 @@ from airflow.models import Connection
 # Операция извлечения данных
 def extract_data():
     # Цепляемся за подключение созданное нами внутри среды AirFlow
-    conn = Connection().get_connection_from_secrets(Variable.get("minio_connection"))
+    connection = Connection().get_connection_from_secrets(Variable.get("minio_connection"))
     # Создаём клиента для подключения к Minio
     client = Minio(
-        f"{conn.host}:{conn.port}",
-        access_key=conn.login,
-        secret_key=conn.password,
+        f"{connection.host}:{connection.port}",
+        access_key=connection.login,
+        secret_key=connection.password,
         secure=False
     )
     # Выгружаем оттуда объект
@@ -85,12 +85,12 @@ def transform_data():
 # Операция загрузки обработанных данных
 def load_data():
     # Цепляемся за подключение созданное нами внутри среды AirFlow
-    conn = Connection().get_connection_from_secrets(Variable.get("minio_connection"))
+    connection = Connection().get_connection_from_secrets(Variable.get("minio_connection"))
     # Cоздаём подключение к minio
     client = Minio(
-        f"{conn.host}:{conn.port}",
-        access_key=conn.login,
-        secret_key=conn.password,
+        f"{connection.host}:{connection.port}",
+        access_key=connection.login,
+        secret_key=connection.password,
         secure=False
     )
     # Отправляем файл в minio
