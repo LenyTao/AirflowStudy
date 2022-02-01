@@ -1,7 +1,8 @@
 from airflow.models import Variable
 from airflow.models import Connection
 from minio import Minio
-
+import mlflow
+from datetime import datetime
 
 # Операция загрузки обработанных данных
 def load_data():
@@ -21,3 +22,11 @@ def load_data():
         file_path="./output.csv",
         content_type='application/csv',
     )
+    # mlflow_uri = "http://mlflow:5000/"
+    # mlflow.set_tracking_uri(mlflow_uri)
+    # expname = "My_ETL_DAG"
+    # mlflow.set_experiment(expname)
+    # mlflow.log_param("Finish_Time", datetime.today())
+    # mlflow.log_artifact("output.csv",artifact_path="s3://mlflow/")
+
+    

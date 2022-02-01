@@ -1,0 +1,44 @@
+version: '3'
+
+services: 
+  postgres:
+    image: postgres
+    container_name: postgres_db
+    env_file:
+      - flow.env
+    ports:
+      - '5432:5432'
+
+  minio:
+    image: docker.io/bitnami/minio:2021
+    container_name: minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    env_file:
+      - flow.env
+    volumes:
+      - 'minio_data_volume:/data'
+
+  mlflow:
+    build: mlflow/
+    container_name: mlflow
+    env_file:
+      - flow.env
+    ports:
+      - '5000:5000'
+    command: bash ./run_mlflow.sh  
+
+  airflow:
+    build: airflow/
+    container_name: airflow
+    ports:      
+      - '8080:8080'
+    env_file:
+      - flow.env
+    volumes:
+      - ../dags:/usr/local/airflow/dags
+
+volumes:
+  minio_data_volume:
+    driver: local

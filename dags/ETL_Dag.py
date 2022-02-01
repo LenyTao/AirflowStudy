@@ -5,6 +5,8 @@ from airflow.utils.dates import days_ago
 from tasks.Extractor import extract_data
 from tasks.Transformer import transform_data
 from tasks.Loader import load_data
+from tasks.Sender import send_metrics_to_mlflow
+
 
 args = {
     'owner': 'User',
@@ -38,6 +40,12 @@ with DAG(
         dag=etl_dag,
         task_id='load'
     )
+    # Закрепляем операцию отправки метрик в MlFlow в etl_dag
+    send_metric = PythonOperator(
+        python_callable=send_metrics_to_mlflow,
+        dag=etl_dag,
+        task_id='send'
+    )
 
 # Строим пайплайн для создания полноценного etl процесса в нашем DAG
-extract >> transform >> load
+extract >> transform >> load >> send_metric
